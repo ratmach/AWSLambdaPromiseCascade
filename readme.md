@@ -1,6 +1,8 @@
 # Lambda Promise Cascade
 ### !!! please keep in mind this repository is a work in progress !!!
 
+![aws lambda promise cascade](https://github.com/ratmach/AWSLambdaPromiseCascade/blob/master/icon.png?raw=true)
+
 Python based lambda promise solution using redis
 
 library is a wrapper for lambda function invocation, payload and memory sharing
