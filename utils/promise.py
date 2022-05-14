@@ -92,3 +92,7 @@ class LambdaPromise:
     def data(self):
         return {"arn": self.arn, "callback_arns": self.callback_arns, "callback_failed_arns": self.callback_failed_arns,
                 "payload": self.payload}
+
+    @property
+    def result(self):
+        return self.shared_memory.result

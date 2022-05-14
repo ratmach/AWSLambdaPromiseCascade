@@ -24,12 +24,13 @@ def some_function(arg0, arg1, arg2):
     print(arg0, arg1, arg2)
 
 
-def some_function_callback():
+def some_function_callback(invoked_from):
     print("arguments were printed")
 
 
-def some_function_error_logging(e):
-    print(f"error occurred {e}")
+def some_function_error_logging(invoked_from):
+    original_promise = LambdaPromise(invoked_from)
+    print(f"error occurred {original_promise.result}")
 
 
 promise = LambdaPromise(
@@ -46,27 +47,33 @@ promise.async_proceed()
 
 after `some_function` is called `some_function_callback` will be invoked, if there were any errors during the execution `some_function_error_logging` will be invoked with the error
 
+functions that are invoked via `async_proceed()` should be wrapped w/ `@lambda_promise` decorator
+`@lambda_promise` parameters:
+- `ignore_result` should result of the function invocation be stored in promise shared memory
+- `pass_promise_object` should promise object be passed to function as the first parameter
+
+`callback_*` functions must have `invoked_from` parameter set
 ##### passing promise for a callback:
 
 ```python
 from utils import lambda_promise, LambdaPromise
 
 
-@lambda_promise()
+@lambda_promise(ignore_result=False, pass_promise_object=False)
 def some_function(arg0, arg1, arg2):
     print(arg0, arg1, arg2)
 
 
-@lambda_promise()
-def some_other_function(arg0, arg1, arg2):
-    print("some other function was called with arguments:", arg0, arg1, arg2)
+@lambda_promise(ignore_result=True, pass_promise_object=True)
+def some_other_function(promise, arg0, arg1, arg2, invoked_from=None):
+    print(f"some other function was called from {invoked_from} arguments:", arg0, arg1, arg2)
 
 
-def some_function_callback():
+def some_function_callback(invoked_from):
     print("arguments were printed")
 
 
-def some_function_error_logging():
+def some_function_error_logging(invoked_from):
     print("error occured during printing")
 
 
@@ -91,8 +98,8 @@ promise.async_proceed()
 from utils import lambda_promise, LambdaPromise
 
 
-@lambda_promise()
-def some_function(arg0, arg1, arg2):
+@lambda_promise(pass_promise_object=False)
+def some_function(arg0, arg1, arg2, invoked_from=None):
     print(arg0, arg1, arg2)
 
 
