@@ -1,4 +1,6 @@
 # Lambda Promise Cascade
+### !!! please keep in mind this repository is a work in progress !!!
+
 Python based lambda promise solution using redis
 
 library is a wrapper for lambda function invocation, payload and memory sharing
