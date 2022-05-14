@@ -1,0 +1,2 @@
+class LambdaPromiseException(Exception):
+    pass
