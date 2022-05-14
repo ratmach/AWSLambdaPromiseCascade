@@ -1,3 +1,5 @@
+import json
+
 import boto3
 from uuid import uuid4
 
@@ -15,19 +17,15 @@ class LambdaPromise:
             self.callback_failed_arns = callback_failed_arns or []
             self.payload = payload or {}
         else:
-            self.arn = self.shared_memory[uid].arn
-            self.callback_arns = self.shared_memory[uid].callback_arn
-            self.callback_failed_arns = self.shared_memory[uid].callback_failed_arn
-            self.payload = self.shared_memory[uid].payload
+            data = json.loads(self.shared_memory.data.decode("utf-8"))
+            self.arn = data["arn"]
+            self.callback_arns = data["callback_arns"]
+            self.callback_failed_arns = data["callback_failed_arns"]
+            self.payload = data["payload"]
 
     def then(self, next_arn):
         self.callback_arns.append(next_arn)
         self.save_state()
-        try:
-            pass
-        except Exception as e:
-            pass
-        return self
 
     def catch(self, next_arn):
         self.callback_failed_arns.append(next_arn)
@@ -43,9 +41,9 @@ class LambdaPromise:
             Qualifier='string'
         )
         if response.StatusCode == 200:
-            pass  # INVOKE callbacks
+            self.invoke_callbacks()
         else:
-            pass  # INVOKE callback_errors
+            self.invoke_callback_fails(response.FunctionError)
 
     def async_proceed(self):
         """
@@ -53,17 +51,37 @@ class LambdaPromise:
         :return:
         """
         client = boto3.client("lambda")
-        response = client.invoke(
-            FunctionName='string',
+        client.invoke(
+            FunctionName=self.arn,
             InvocationType='Event',
             Payload=self.payload.encode("utf-8"),
             Qualifier='string'
         )
 
+    def invoke_callbacks(self):
+        client = boto3.client("lambda")
+        for arn in self.callback_arns:
+            client.invoke(
+                FunctionName=arn,
+                InvocationType='Event',
+                Payload=b"",
+                Qualifier='string'
+            )
+
+    def invoke_callback_fails(self, reason):
+        client = boto3.client("lambda")
+        for arn in self.callback_arns:
+            client.invoke(
+                FunctionName=arn,
+                InvocationType='Event',
+                Payload=b"",
+                Qualifier='string'
+            )
+
     def save_state(self):
-        pass
+        self.shared_memory.data = json.dumps(self.data)
 
     @property
     def data(self):
-        return {"arn": self.arn, "callback_arn": self.callback_arn, "callback_failed_arn": self.callback_failed_arns,
+        return {"arn": self.arn, "callback_arns": self.callback_arns, "callback_failed_arns": self.callback_failed_arns,
                 "payload": self.payload}

@@ -6,11 +6,12 @@ def lambda_promise():
         def wrap(uid=None, *args, **kwargs):
             promise = LambdaPromise(uid)
             try:
-                result = f(*args,**kwargs)
+                result = f(*args, **kwargs)
+                promise.invoke_callbacks()
                 return result
             except Exception as e:
-                pass
-            # TODO invoke
+                promise.invoke_callback_fails(e)
+
         return wrap
 
     return func
