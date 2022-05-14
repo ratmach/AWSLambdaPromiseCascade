@@ -3,7 +3,6 @@ import json
 import boto3
 from uuid import uuid4
 
-from utils.exception import LambdaPromiseException
 from utils.memory import SharedMemory
 
 
@@ -50,36 +49,44 @@ class LambdaPromise:
         requires function to be wrapped with @lambda_promise
         :return:
         """
+        payload = self.payload
+        payload["invoked_lambda_uid"] = self.uid
         client = boto3.client("lambda")
         client.invoke(
             FunctionName=self.arn,
             InvocationType='Event',
-            Payload=self.payload.encode("utf-8"),
+            Payload=json.dumps(payload).encode("utf-8"),
             Qualifier='string'
         )
 
     def invoke_callbacks(self):
         client = boto3.client("lambda")
+        payload = {"invoked_from": self.uid}
         for arn in self.callback_arns:
             client.invoke(
                 FunctionName=arn,
                 InvocationType='Event',
-                Payload=b"",
+                Payload=json.dumps(payload).encode("utf-8"),
                 Qualifier='string'
             )
 
     def invoke_callback_fails(self, reason):
+        self.set_result({"error": reason})
         client = boto3.client("lambda")
+        payload = {"invoked_from": self.uid}
         for arn in self.callback_arns:
             client.invoke(
                 FunctionName=arn,
                 InvocationType='Event',
-                Payload=b"",
+                Payload=json.dumps(payload).encode("utf-8"),
                 Qualifier='string'
             )
 
     def save_state(self):
         self.shared_memory.data = json.dumps(self.data)
+
+    def set_result(self, result):
+        self.shared_memory.result = result
 
     @property
     def data(self):
