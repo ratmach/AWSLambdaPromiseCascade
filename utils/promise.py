@@ -15,6 +15,7 @@ class LambdaPromise:
             self.callback_arns = callback_arns or []
             self.callback_failed_arns = callback_failed_arns or []
             self.payload = payload or {}
+            self.save_state()
         else:
             data = json.loads(self.shared_memory.data.decode("utf-8"))
             self.arn = data["arn"]
@@ -60,6 +61,8 @@ class LambdaPromise:
         )
 
     def invoke_callbacks(self):
+        if not self.callback_arns:
+            return
         client = boto3.client("lambda")
         payload = {"invoked_from": self.uid}
         for arn in self.callback_arns:
@@ -72,9 +75,11 @@ class LambdaPromise:
 
     def invoke_callback_fails(self, reason):
         self.set_result({"error": reason})
+        if not self.callback_failed_arns:
+            return
         client = boto3.client("lambda")
         payload = {"invoked_from": self.uid}
-        for arn in self.callback_arns:
+        for arn in self.callback_failed_arns:
             client.invoke(
                 FunctionName=arn,
                 InvocationType='Event',
@@ -86,6 +91,10 @@ class LambdaPromise:
         self.shared_memory.data = json.dumps(self.data)
 
     def set_result(self, result):
+        if not result:
+            result = "None"
+        if isinstance(result, dict):
+            result = json.dumps(result)
         self.shared_memory.result = result
 
     @property

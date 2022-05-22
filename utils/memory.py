@@ -9,11 +9,12 @@ class SharedMemory:
 
     def __setattr__(self, key, value):
         if key not in ('uid', 'client'):
-            pass
-        super().__setattr__(key, value)
+            self.client.set(key, value)
+        else:
+            super().__setattr__(key, value)
 
     def __getattr__(self, item):
-        return self.client.get(self.transform_key(item))
+        return self.client.get(item)
 
     def __setitem__(self, key, value):
         self.client.set(self.transform_key(key), value)

@@ -16,7 +16,7 @@ this will only works for AWS for now
 
 ##### standard usage:
 ```python
-from utils import lambda_promise, LambdaPromise
+from utils import lambda_promise, lambda_handler, LambdaPromise
 
 
 @lambda_promise()
@@ -43,6 +43,10 @@ promise = LambdaPromise(
 ).then("arn:aws:lambda:us-east-2:123456789012:function:some_function_callback:"
        ).catch("arn:aws:lambda:us-east-2:123456789012:function:some_function_error_logging:")
 promise.async_proceed()
+
+@lambda_handler()
+def main(event, context):
+    pass
 ```
 
 after `some_function` is called `some_function_callback` will be invoked, if there were any errors during the execution `some_function_error_logging` will be invoked with the error
@@ -56,7 +60,7 @@ functions that are invoked via `async_proceed()` should be wrapped w/ `@lambda_p
 ##### passing promise for a callback:
 
 ```python
-from utils import lambda_promise, LambdaPromise
+from utils import lambda_promise, lambda_handler, LambdaPromise
 
 
 @lambda_promise(ignore_result=False, pass_promise_object=False)
@@ -91,11 +95,14 @@ promise = LambdaPromise(
 ).catch("arn:aws:lambda:us-east-2:123456789012:function:some_function_error_logging:")
 promise.async_proceed()
 
+@lambda_handler()
+def main(event, context):
+    pass
 ```
 
 ##### multiple promises:
 ```python
-from utils import lambda_promise, LambdaPromise
+from utils import lambda_promise, lambda_handler, LambdaPromise
 
 
 @lambda_promise(pass_promise_object=False)
@@ -130,6 +137,10 @@ promise = LambdaPromise(
     )
 )
 promise.async_proceed()
+
+@lambda_handler()
+def main(event, context):
+    pass
 ```
 using `then()` multiple times allows for a promise to have multiple callbacks (invocation order is maintained)
 
