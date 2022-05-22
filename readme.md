@@ -23,26 +23,35 @@ from utils import lambda_promise, lambda_handler, LambdaPromise
 def some_function(arg0, arg1, arg2):
     print(arg0, arg1, arg2)
 
-
-def some_function_callback(invoked_from):
+@lambda_promise(pass_promise_object=True)
+def some_function_callback(promise):
     print("arguments were printed")
 
+@lambda_promise(pass_promise_object=True)
+def some_function_error_logging(promise):
+    print(f"error occurred {promise.result}")
 
-def some_function_error_logging(invoked_from):
-    original_promise = LambdaPromise(invoked_from)
-    print(f"error occurred {original_promise.result}")
 
-
-promise = LambdaPromise(
-    arn="arn:aws:lambda:us-east-2:123456789012:function:some_function:",
+promise_obj = LambdaPromise(
+    arn="arn:aws:lambda:us-east-2:123456789012:function:",
+    function_name="some_function",
     payload=dict(
         arg0="somebody",
         arg1="once",
         arg2="told me"
     )
-).then("arn:aws:lambda:us-east-2:123456789012:function:some_function_callback:"
-       ).catch("arn:aws:lambda:us-east-2:123456789012:function:some_function_error_logging:")
-promise.async_proceed()
+).then(
+        LambdaPromise(
+            arn="arn:aws:lambda:us-east-2:123456789012:function:",
+            function_name="some_function_callback"
+        )
+).catch(
+        LambdaPromise(
+            arn="arn:aws:lambda:us-east-2:123456789012:function:",
+            function_name="some_function_error_logging"
+        )
+)
+promise_obj.async_proceed()
 
 @lambda_handler
 def main(event, context):
@@ -55,6 +64,8 @@ functions that are invoked via `async_proceed()` should be wrapped w/ `@lambda_p
 `@lambda_promise` parameters:
 - `ignore_result` should result of the function invocation be stored in promise shared memory
 - `pass_promise_object` should promise object be passed to function as the first parameter
+- `function_name` optional custom name for the function if ignored `{function.__module__}.{function.__name__}` will be used
+- `pass_context`
 
 `callback_*` functions must have `invoked_from` parameter set
 ##### passing promise for a callback:
@@ -72,17 +83,18 @@ def some_function(arg0, arg1, arg2):
 def some_other_function(promise, arg0, arg1, arg2, invoked_from=None):
     print(f"some other function was called from {invoked_from} arguments:", arg0, arg1, arg2)
 
-
-def some_function_callback(invoked_from):
+@lambda_promise(pass_promise_object=True)
+def some_function_callback(promise):
     print("arguments were printed")
 
-
-def some_function_error_logging(invoked_from):
+@lambda_promise(pass_promise_object=True)
+def some_function_error_logging(promise):
     print("error occured during printing")
 
 
-promise = LambdaPromise(
-    arn="arn:aws:lambda:us-east-2:123456789012:function:some_function:",
+promise_object = LambdaPromise(
+    arn="arn:aws:lambda:us-east-2:123456789012:function:",
+    function_name="some_function",
     payload=dict(
         arg0="somebody",
         arg1="once",
@@ -90,10 +102,17 @@ promise = LambdaPromise(
     )
 ).then(
     LambdaPromise(
-        arn="arn:aws:lambda:us-east-2:123456789012:function:some_other_function:"
-    ).then("arn:aws:lambda:us-east-2:123456789012:function:some_function_callback:")
-).catch("arn:aws:lambda:us-east-2:123456789012:function:some_function_error_logging:")
-promise.async_proceed()
+        arn="arn:aws:lambda:us-east-2:123456789012:function:",
+        function_name="some_function"
+    ).then(LambdaPromise(
+        arn="arn:aws:lambda:us-east-2:123456789012:function:",
+        function_name="some_function_callback"
+    ))
+).catch(LambdaPromise(
+        arn="arn:aws:lambda:us-east-2:some_function_error_logging:function:",
+        function_name="some_function_callback"
+))
+promise_object.async_proceed()
 
 @lambda_handler
 def main(event, context):
@@ -143,8 +162,16 @@ def main(event, context):
     pass
 ```
 using `then()` multiple times allows for a promise to have multiple callbacks (invocation order is maintained)
+#### lambda payload structure:
+```json
+{"payload": {"payload passed to the promise": "in a form of a dictionary"},
+"command": "custom or generated function name",
+"invoked_lambda_uid": "promise uuid"}
+```
+##### Zappa:
+lambda payload structure is zappa compliant in order to use it w/ zappa simply omit `@lambda_handler` decorator and let zappa handle events
 
-##### using shared_memory as a standalone:
+#### using shared_memory as a standalone:
 shared_memory allows data to be shared through lambdas with minimal headache
 each `SharedMemory` object acts essentially as a memory page, with unique uuid identifier
 in order to access said memory one must have uuid identifier

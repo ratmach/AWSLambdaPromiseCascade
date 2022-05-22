@@ -26,12 +26,12 @@ class LambdaPromise:
             self.callback_failed_arns = data["callback_failed_arns"]
             self.payload = data["payload"]
 
-    def then(self, next_arn):
-        self.callback_arns.append(next_arn)
+    def then(self, next_promise):
+        self.callback_arns.append(next_promise.uid)
         self.save_state()
 
-    def catch(self, next_arn):
-        self.callback_failed_arns.append(next_arn)
+    def catch(self, next_promise):
+        self.callback_failed_arns.append(next_promise.uid)
         self.save_state()
         return self
 

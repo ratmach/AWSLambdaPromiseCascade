@@ -10,7 +10,13 @@ logger = logging.getLogger(__name__)
 
 def lambda_promise(ignore_result=False, pass_promise_object=False, function_name=None, pass_context=None):
     def __(func):
-        known_promises[function_name or ".".join((func.__module__, func.__name__,))] = lambda event, context: wrap(
+        if func.__module__ == "__main__":
+            generated_name = ".".join((func.__module__, func.__name__,))
+        else:
+            generated_name = func.__name__
+        function_identifier = function_name or generated_name
+
+        known_promises[function_identifier] = lambda event, context: wrap(
             event, context)
 
         def wrap(event, context):
