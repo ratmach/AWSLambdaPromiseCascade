@@ -3,7 +3,7 @@ from utils.decorators import lambda_handler, lambda_promise
 from example.test_thingy import test_function
 
 
-@lambda_handler()
+@lambda_handler
 def main(event, context):
     pass
 

@@ -44,7 +44,7 @@ promise = LambdaPromise(
        ).catch("arn:aws:lambda:us-east-2:123456789012:function:some_function_error_logging:")
 promise.async_proceed()
 
-@lambda_handler()
+@lambda_handler
 def main(event, context):
     pass
 ```
@@ -95,7 +95,7 @@ promise = LambdaPromise(
 ).catch("arn:aws:lambda:us-east-2:123456789012:function:some_function_error_logging:")
 promise.async_proceed()
 
-@lambda_handler()
+@lambda_handler
 def main(event, context):
     pass
 ```
@@ -138,7 +138,7 @@ promise = LambdaPromise(
 )
 promise.async_proceed()
 
-@lambda_handler()
+@lambda_handler
 def main(event, context):
     pass
 ```

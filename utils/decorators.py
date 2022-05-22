@@ -14,11 +14,11 @@ def lambda_promise(ignore_result=False, pass_promise_object=False, function_name
             event, context)
 
         def wrap(event, context):
-            invoked_lambda_uid = event.pop("invoked_lambda_uid", None)
+            invoked_lambda_uid = event.get("invoked_lambda_uid", None)
             if not invoked_lambda_uid:
                 raise LambdaPromiseException("[lambda_promise] 'invoked_lambda_uid' parameter not set")
             promise = LambdaPromise(invoked_lambda_uid)
-            params = event
+            params = event.get("payload", None)
             if pass_context:
                 params.update({"context": context})
             if pass_promise_object:
@@ -37,24 +37,21 @@ def lambda_promise(ignore_result=False, pass_promise_object=False, function_name
     return __
 
 
-def lambda_handler(parameter_name="command"):
-    def __(func):
-        def wrap(event, context):
-            function_name = event.pop(parameter_name, None)
-            if not function_name:
-                logger.warning("[lambda_handler] command parameter not set")
+def lambda_handler(func):
+    def wrap(event, context):
+        function_name = event.get("command", None)
+        if not function_name:
+            logger.warning("[lambda_handler] command parameter not set")
+        else:
+            function_instance = known_promises.get(function_name, None)
+            if not function_instance:
+                logger.warning("[lambda_handler] function %s cannot be found", function_name)
             else:
-                function_instance = known_promises.get(function_name, None)
-                if not function_instance:
-                    logger.warning("[lambda_handler] function %s cannot be found", function_name)
-                else:
-                    try:
-                        result = function_instance(event, context)
-                    except LambdaPromiseException as e:
-                        logger.error(e)
-                        raise
-            return func(event, context)
+                try:
+                    result = function_instance(event, context)
+                except LambdaPromiseException as e:
+                    logger.error(e)
+                    raise
+        return func(event, context)
 
-        return wrap
-
-    return __
+    return wrap
