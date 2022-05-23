@@ -3,7 +3,7 @@ import json
 import boto3
 from uuid import uuid4
 
-from utils.memory import SharedMemory
+from .memory import SharedMemory
 
 
 class LambdaPromise:
@@ -41,7 +41,6 @@ class LambdaPromise:
         :return:
         """
         payload = self.payload
-        payload["invoked_lambda_uid"] = self.uid
         client = boto3.client("lambda")
         client.invoke(
             FunctionName=self.arn,

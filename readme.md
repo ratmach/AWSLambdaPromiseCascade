@@ -58,6 +58,7 @@ def main(event, context):
     pass
 ```
 
+`payload` parameter must be json encodable
 after `some_function` is called `some_function_callback` will be invoked, if there were any errors during the execution `some_function_error_logging` will be invoked with the error
 
 functions that are invoked via `async_proceed()` should be wrapped w/ `@lambda_promise` decorator
@@ -67,59 +68,10 @@ functions that are invoked via `async_proceed()` should be wrapped w/ `@lambda_p
 - `function_name` optional custom name for the function if ignored `{function.__module__}.{function.__name__}` will be used
 - `pass_context`
 
-`callback_*` functions must have `invoked_from` parameter set
-##### passing promise for a callback:
+`callback_*` functions must also be `LambdaPromise`s
 
-```python
-from lambda_promised_cascade import lambda_promise, lambda_handler, LambdaPromise
-
-
-@lambda_promise(ignore_result=False, pass_promise_object=False)
-def some_function(arg0, arg1, arg2):
-    print(arg0, arg1, arg2)
-
-
-@lambda_promise(ignore_result=True, pass_promise_object=True)
-def some_other_function(promise, arg0, arg1, arg2, invoked_from=None):
-    print(f"some other function was called from {invoked_from} arguments:", arg0, arg1, arg2)
-
-@lambda_promise(pass_promise_object=True)
-def some_function_callback(promise):
-    print("arguments were printed")
-
-@lambda_promise(pass_promise_object=True)
-def some_function_error_logging(promise):
-    print("error occured during printing")
-
-
-promise_object = LambdaPromise(
-    arn="arn:aws:lambda:us-east-2:123456789012:function:",
-    function_name="some_function",
-    payload=dict(
-        arg0="somebody",
-        arg1="once",
-        arg2="told me"
-    )
-).then(
-    LambdaPromise(
-        arn="arn:aws:lambda:us-east-2:123456789012:function:",
-        function_name="some_function"
-    ).then(LambdaPromise(
-        arn="arn:aws:lambda:us-east-2:123456789012:function:",
-        function_name="some_function_callback"
-    ))
-).catch(LambdaPromise(
-        arn="arn:aws:lambda:us-east-2:some_function_error_logging:function:",
-        function_name="some_function_callback"
-))
-promise_object.async_proceed()
-
-@lambda_handler
-def main(event, context):
-    pass
-```
-
-##### multiple promises:
+##### multiple promises (chained):
+Library supports lambda chaining / multiple callbacks are also supported
 ```python
 from lambda_promised_cascade import lambda_promise, lambda_handler, LambdaPromise
 
@@ -153,6 +105,15 @@ promise = LambdaPromise(
             arg1="the sharpest",
             arg2="tool in the shed"
         )
+    ).then(
+        LambdaPromise(
+            arn="arn:aws:lambda:us-east-2:123456789012:function:some_function:",
+            payload=dict(
+                arg0="she was looking kinda dumb",
+                arg1="with the finger and her thumb",
+                arg2="in the shape of an L on her forehead"
+            )
+        )
     )
 )
 promise.async_proceed()
@@ -162,6 +123,7 @@ def main(event, context):
     pass
 ```
 using `then()` multiple times allows for a promise to have multiple callbacks (invocation order is maintained)
+please note that callback are invoked asynchronously (as Events), meaning non-chained callbacks will execute at the same time
 #### lambda payload structure:
 ```json
 {"payload": {"payload passed to the promise": "in a form of a dictionary"},

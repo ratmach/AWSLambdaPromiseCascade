@@ -1,7 +1,7 @@
 import logging
 
-from utils.exception import LambdaPromiseException
-from utils.promise import LambdaPromise
+from .exception import LambdaPromiseException
+from .promise import LambdaPromise
 
 known_promises = {}
 
@@ -24,7 +24,7 @@ def lambda_promise(ignore_result=False, pass_promise_object=False, function_name
             if not invoked_lambda_uid:
                 raise LambdaPromiseException("[lambda_promise] 'invoked_lambda_uid' parameter not set")
             promise = LambdaPromise(invoked_lambda_uid)
-            params = event.get("payload", None)
+            params = event.get("payload", {})
             if pass_context:
                 params.update({"context": context})
             if pass_promise_object:
