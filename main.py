@@ -1,5 +1,5 @@
-from utils import LambdaPromise
-from utils.decorators import lambda_handler, lambda_promise
+from lambda_promised_cascade import LambdaPromise
+from lambda_promised_cascade.decorators import lambda_handler, lambda_promise
 from example.test_thingy import test_function
 
 

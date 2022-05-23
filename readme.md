@@ -16,7 +16,7 @@ this will only works for AWS for now
 
 ##### standard usage:
 ```python
-from utils import lambda_promise, lambda_handler, LambdaPromise
+from lambda_promised_cascade import lambda_promise, lambda_handler, LambdaPromise
 
 
 @lambda_promise()
@@ -71,7 +71,7 @@ functions that are invoked via `async_proceed()` should be wrapped w/ `@lambda_p
 ##### passing promise for a callback:
 
 ```python
-from utils import lambda_promise, lambda_handler, LambdaPromise
+from lambda_promised_cascade import lambda_promise, lambda_handler, LambdaPromise
 
 
 @lambda_promise(ignore_result=False, pass_promise_object=False)
@@ -121,7 +121,7 @@ def main(event, context):
 
 ##### multiple promises:
 ```python
-from utils import lambda_promise, lambda_handler, LambdaPromise
+from lambda_promised_cascade import lambda_promise, lambda_handler, LambdaPromise
 
 
 @lambda_promise(pass_promise_object=False)
@@ -176,7 +176,7 @@ shared_memory allows data to be shared through lambdas with minimal headache
 each `SharedMemory` object acts essentially as a memory page, with unique uuid identifier
 in order to access said memory one must have uuid identifier
 ```python
-from utils import SharedMemory
+from lambda_promised_cascade import SharedMemory
 import json
 
 shared_memory = SharedMemory()
